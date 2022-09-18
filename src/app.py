@@ -6,7 +6,7 @@ from pyspark import SparkContext
 from operator import add
 from pyspark.sql import functions as F
 from pyspark.sql import SQLContext
-import requests
+import requests #todo: make shell scrip to install this
 from bs4 import BeautifulSoup
 import json
 
