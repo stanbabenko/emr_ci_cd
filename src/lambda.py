@@ -33,7 +33,7 @@ def lambda_handler(event, context):
             'TerminationProtected': False,
             'Ec2SubnetId': 'subnet-075e5448a4b3efc77'
         },
-        Applications = [ {'Name': 'Spark'} ],
+        Applications = [ {'Name': 'Spark'}, {'Name': 'Zeppelin'}, {'Name': 'Ganglia'} ],
         Configurations = [
             { 'Classification': 'spark-hive-site',
             'Properties': {
@@ -45,22 +45,14 @@ def lambda_handler(event, context):
         ServiceRole = 'defaultEMRStack-EMRRole-3LJMSJOJWZ51',
         Steps=[
             {
-                'Name': 'flow-log-analysis',
+                'Name': 'spark-submit-python-test',
                 'ActionOnFailure': 'TERMINATE_CLUSTER',
                 'HadoopJarStep': {
                     'Jar': 'command-runner.jar',
-                        'Args': [
-                            'spark-submit',
-                            '--deploy-mode', 'cluster',
-                            '--executor-memory', '6G',
-                            '--num-executors', '1',
-                            '--executor-cores', '2',
-                            '--class', 'com.aws.emr.ProfitCalc',
-                            's3://emr-src/data/external/SparkProfitCalc.jar',
-                            's3://emr-src/data/external/fake_sales_data.csv',
-                            's3://emr-src/data/external/output'
-                        ]
+                    'Args': [
+                        'spark-submit','s3://emr-src/configs/test-files/testCluster.py'
+                    ]
                 }
             }
-        ]
+        ],
     )
