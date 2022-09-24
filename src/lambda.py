@@ -43,14 +43,27 @@ def lambda_handler(event, context):
         VisibleToAllUsers=True,
         JobFlowRole = 'defaultEMRStack-EMREC2InstanceProfile-eEzN0mKaQfyW',
         ServiceRole = 'defaultEMRStack-EMRRole-3LJMSJOJWZ51',
-        Steps=[
+        Steps=
+        [
+                {
+                    "Name": "Setup Python Configuration",
+                    "ActionOnFailure": "CONTINUE",
+                    "HadoopJarStep": {
+                    "Jar": "command-runner.jar",
+                    "Args": [
+                         "bash",
+                         "-c",
+                         "aws s3 cp s3://emr-src/configs/sdn-pull/setup_python.sh .; chmod +x setup_python.sh; ./setup_python.sh; rm setup_python.sh"
+                     ]
+                }
+            },
             {
-                'Name': 'spark-submit-python-test',
+                'Name': 'Execute app.py',
                 'ActionOnFailure': 'TERMINATE_CLUSTER',
                 'HadoopJarStep': {
                     'Jar': 'command-runner.jar',
                     'Args': [
-                        'spark-submit','s3://emr-src/configs/test-files/testCluster.py'
+                        'spark-submit','s3://emr-src/configs/sdn-pull/app.py'
                     ]
                 }
             }
