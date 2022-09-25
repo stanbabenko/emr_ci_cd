@@ -1,2 +1,2 @@
 sudo pip3 install requests
-sudo pip3 isnstall findspark
+sudo pip3 install findspark
