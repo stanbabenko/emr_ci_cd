@@ -1,3 +1,4 @@
+from ast import Not
 import pytest
 from src.app import testFunction
 import unittest
@@ -9,11 +10,34 @@ from pyspark.sql import SparkSession
 from pyspark import SparkContext
 import os
 import findspark as fs
+import requests
 
 #from pytest import assertEqual
 
 def test_file1_method1():
 	assert "testString" == testFunction()
+
+def test_data_pull():
+    fs.init()
+    sc = SparkContext(appName="myAppName")
+    spark = (SparkSession
+                     .builder
+                     .master("local[*]")
+                     .appName("Unit-tests")
+                     .getOrCreate())
+
+    input_schema = StructType([
+            StructField('StoreID', IntegerType(), True),
+            StructField('Location', StringType(), True),
+            StructField('Date', StringType(), True),
+            StructField('ItemCount', IntegerType(), True)
+        ])
+
+    url2= 'https://www.treasury.gov/ofac/downloads/sanctions/1.0/sdn_advanced.xml'
+
+    document = requests.get(url2)
+
+    assert document is not None
 
 def test_etl():
     #1. Prepare an input data frame that mimics our source data.

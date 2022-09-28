@@ -6,20 +6,29 @@ from pyspark import SparkContext
 from operator import add
 from pyspark.sql import functions as F
 from pyspark.sql import SQLContext
-import requests #todo: make shell scrip to install this
+import requests
 from bs4 import BeautifulSoup
 import json
 from pyspark.sql import SparkSession
 from pyspark import SparkContext
 import os
 import findspark as fs
+import xml.etree.ElementTree as ET
+import boto3
+from io import StringIO
+import s3fs
+import pandas
 
 
 def main():
-    print("This line will be printed@@@.")
     run_aggregation()
-    testFunction()
-    createDataFrame()
+
+def getXMLparse(party):
+     #doc = xml.dom.minidom.parse(party)
+     print(type(party))
+     result = party.find('SanctionsMeasure')
+     print(result)
+     print(type(result))
 
 def createDataFrame():
     fs.init()
@@ -87,6 +96,16 @@ def transform_data(input_df):
     return transformed_df
 
 def run_aggregation():
+
+    fs.init()
+    sc = SparkContext.getOrCreate()
+
+    spark = (SparkSession
+                     .builder
+                     .master("local[*]")
+                     .appName("Unit-tests")
+                     .getOrCreate())
+
     url = 'https://www.w3schools.com/xml/simple.xml'
 
     url2= 'https://www.treasury.gov/ofac/downloads/sanctions/1.0/sdn_advanced.xml'
@@ -94,65 +113,70 @@ def run_aggregation():
     document = requests.get(url2)
 
     soup=BeautifulSoup(document.content,"lxml-xml")
-#distinctParties = soup.findAll("DistinctParty")
-#print("****distinct parties****")
-#print(distinctParties.__len__())
-#for party in distinctParties:
-#for i in range(5):
-#    party = distinctParties[i]
-#    print("****party****" + str(i))
-#    print(party)
-#    print("****party****" + str(i))
-
 
     sanctionsEntries = soup.findAll("SanctionsEntry")
     print("****distinct sanctions****")
     print(sanctionsEntries.__len__())
+
+
+    input_schema = StructType([
+            StructField('SanctionsEntryID', StringType(), True),
+            StructField('ListID', StringType(), True),
+            StructField('ProfileID', StringType(), True),
+            StructField('EntryEventTypeID', StringType(), True),
+            StructField('SanctionsTypeID', StringType(), True)
+        ])
+    #input_data = [(1, "Bangalore", "2021-12-01", 5),
+    #            (2,"Bangalore" ,"2021-12-01",3),
+    #            (5,"Amsterdam", "2021-12-02", 10),
+    #            (6,"Amsterdam", "2021-12-01", 1),
+    #            (8,"Warsaw","2021-12-02", 15),
+    #            (7,"Warsaw","2021-12-01",99)]
+    input_data = []
+    #export_df = spark.createDataFrame(data=input_data, schema=input_schema)
+
+    partiesList = []
     #for party in distinctParties:
     for i in range(5):
         party = sanctionsEntries[i]
         print("****party****" + str(i))
         print(party)
+        partyDF = getXMLparse(party)
+
+        SanctionsEntryID = party['ID']
+        ListID = party['ListID']
+        profileID = party['ProfileID']
+        EntryEventTypeID = party.find('EntryEvent')['ID']
+        sanctionsTypeID = party.find('SanctionsMeasure').attrs['SanctionsTypeID']
+#       party.find('SanctionsMeasure').attrs['ID'] <--STR
+        print("*****Attributes: ******")
+        print(SanctionsEntryID)
+        print(ListID)
+        print(profileID)
+        print(EntryEventTypeID)
+        print(sanctionsTypeID)
+
+        partyTuple = (SanctionsEntryID,ListID,profileID,EntryEventTypeID,sanctionsTypeID)
+
+        partiesList.append(partyTuple)
+
         print("****party****" + str(i))
+    print("**** parties list *****")
+    print(len(partiesList))
+    export_parties_df = spark.createDataFrame(data=partiesList, schema=input_schema)
 
+    s3 = boto3.resource('s3')
+    # get a handle on the bucket that holds your file
+    bucket = s3.Bucket('emr-src')
 
+    #export_parties_df.write.parquet("s3://emr-src/data/sdn/test.parquet",mode="overwrite")
+    #csv_buffer = StringIO()
+    #export_parties_df.to_csv(csv_buffer)
+    ##s3_resource = boto3.resource('s3')
+    #s3_resource.Object(bucket, 'export_parties_df.csv').put(Body=csv_buffer.getvalue())
 
-#import pandas as pd
-#from pandas.util.testing import makeTimeSeries
-
-#df = makeTimeSeries()
-#df.head()
-
-#from pyspark.sql import SparkSession
-#spark = SparkSession.builder.getOrCreate()
-#foo = spark.read.parquet('s3a://<some_path_to_a_parquet_file>')
-# Create a spark session
-#spark = SparkSession.builder.appName('Empty_Dataframe').getOrCreate()
- 
-# Create an empty RDD
-#emp_RDD = spark.sparkContext.emptyRDD()
- 
-# Create empty schema
-#columns = StructType([])
- 
-# Create an empty RDD with empty schema
-#data = spark.createDataFrame(data = emp_RDD,
-#                             schema = columns)
-
-#
-#df = spark.read.format("com.databricks.spark.xml") \
-#    .option("rowTag","record").load("https://www.treasury.gov/ofac/downloads/sanctions/1.0/sdn_advanced.xml")
-
-#file_rdd = spark.read.text("./data/*.xml", wholetext=True).rdd
-
-
-# Print the dataframe
-#print('Dataframe :')
-#df.show()
- 
-# Print the schema
-#print('Schema :')
-#df.printSchema()
+    pandasDF = export_parties_df.toPandas()
+    pandasDF.to_csv('s3://emr-src/data/sdn/dummy.csv', index=False)
 
 
 if __name__ == "__main__":
