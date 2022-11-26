@@ -166,7 +166,7 @@ def run_aggregation():
     export_parties_df = spark.createDataFrame(data=partiesList, schema=input_schema)
 
     s3 = boto3.resource('s3')
-    # get a handle on the bucket that holds your file
+    # get a handle on the bucket that holds your file 
     bucket = s3.Bucket('emr-src')
 
     #export_parties_df.write.parquet("s3://emr-src/data/sdn/test.parquet",mode="overwrite")
