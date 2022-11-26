@@ -171,7 +171,7 @@ def run_aggregation():
 
     #export_parties_df.write.parquet("s3://emr-src/data/sdn/test.parquet",mode="overwrite")
     #csv_buffer = StringIO()
-    #export_parties_df.to_csv(csv_buffer)
+    #export_parties_df.to_csv(csv_buffer) 
     ##s3_resource = boto3.resource('s3')
     #s3_resource.Object(bucket, 'export_parties_df.csv').put(Body=csv_buffer.getvalue())
 
