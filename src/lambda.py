@@ -31,7 +31,7 @@ def lambda_handler(event, context):
             'InstanceCount': 1,
             'KeepJobFlowAliveWhenNoSteps': False,
             'TerminationProtected': False,
-            'Ec2SubnetId': 'subnet-075e5448a4b3efc77'
+            'Ec2SubnetId': 'subnet-0417107eeda42e3ea'
         },
         Applications = [ {'Name': 'Spark'}, {'Name': 'Zeppelin'}, {'Name': 'Ganglia'} ],
         Configurations = [
