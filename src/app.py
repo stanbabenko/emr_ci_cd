@@ -24,7 +24,6 @@ def main():
     run_aggregation()
 
 def getXMLparse(party):
-     #doc = xml.dom.minidom.parse(party)
      print(type(party))
      result = party.find('SanctionsMeasure')
      print(result)
